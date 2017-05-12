@@ -1,0 +1,514 @@
+R Code
+
+#Loading the data set setwd("C:/Users/werms/Desktop/KDD/Project")
+
+patients <- read.csv("10kDiabetes.csv", stringsAsFactors = F)
+
+Data Cleaning: #Removing inconsistencies
+
+library(editrules) (E<-editfile("rules.txt"))
+
+ve <- violatedEdits(E, patients) summary(ve)
+
+plot(ve)
+
+#rules.txt
+
+A1Cresult %in% c('Norm','None','>7','>8') readmitted %in% c('FALSE','TRUE') gender %in% c('Male','Female')
+
+insulin %in% c('Down','No','Up','Steady') time_in_hospital>0
+
+weight %in% c('[0-25)','[25-50)','[50-75)','[75-100)','[100-125)','[125-150)','[150-175)')
+
+race %in% c('Caucasian','AfricanAmerican','Asian','Hispanic','Other') change %in% c('No','Ch')
+diabetesMed %in% c('Yes','No')
+insulin %in% c('Up','Down','No','Steady')
+
+
+
+#Removing patients with hospice and expired
+
+patients <- subset(patients, discharge_disposition_id != "Expired") patients <- subset(patients, discharge_disposition_id != "Hospice / home")
+
+#Changing to numeric variables head(patternData)
+
+patientData
+
+patientData$A1Cresult <- as.character(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == "None"] <- 1 patientData$A1Cresult <- as.character(patientData$A1Cresult)
+ 
+23
+
+Analysis on Readmission Rates
+
+
+
+
+patientData$A1Cresult[patientData$A1Cresult == "Norm"] <- 2 patientData$A1Cresult <- as.character(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == ">7"] <- 3 patientData$A1Cresult <- as.character(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == ">8"] <- 4 patientData$A1Cresult <- as.numeric(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == "None"] <- 1 patientData$A1Cresult <- as.numeric(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == "Norm"] <- 2 patientData$A1Cresult <- as.numeric(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == ">7"] <- 3 patientData$A1Cresult <- as.numeric(patientData$A1Cresult) patientData$A1Cresult[patientData$A1Cresult == ">8"] <- 4 patientData$A1Cresult
+
+patientData$max_glu_serum <- as.character(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == "None"] <- 1 patientData$max_glu_serum <- as.character(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == "Norm"] <- 2 patientData$max_glu_serum <- as.character(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == ">200"] <- 3 patientData$max_glu_serum <- as.character(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == ">300"] <- 4 patientData$max_glu_serum <- as.numeric(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == "None"] <- 1 patientData$max_glu_serum <- as.numeric(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == "Norm"] <- 2 patientData$max_glu_serum <- as.numeric(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == ">200"] <- 3 patientData$max_glu_serum <- as.numeric(patientData$max_glu_serum) patientData$max_glu_serum[patientData$max_glu_serum == ">300"] <- 4 patientData$max_glu_serum
+
+patientData$insulin <- as.character(patientData$insulin) patientData$insulin[patientData$insulin == "No"] <- 1 patientData$insulin <- as.character(patientData$insulin) patientData$insulin[patientData$insulin == "Down"] <- 2 patientData$insulin <- as.character(patientData$insulin) patientData$insulin[patientData$insulin == "Steady"] <- 3 patientData$insulin <- as.character(patientData$insulin) patientData$insulin[patientData$insulin == "Up"] <- 4
+ 
+24
+
+Analysis on Readmission Rates
+
+
+
+
+patientData$insulin <- as.numeric(patientData$insulin) patientData$insulin[patientData$insulin == "No"] <- 1 patientData$insulin <- as.numeric(patientData$insulin) patientData$insulin[patientData$insulin == "Down"] <- 2 patientData$insulin <- as.numeric(patientData$insulin) patientData$insulin[patientData$insulin == "Steady"] <- 3 patientData$insulin <- as.numeric(patientData$insulin) patientData$insulin[patientData$insulin == "Up"] <- 4 patientData$change <- as.character(patientData$change) patientData$change[patientData$change == "No"] <- 0 patientData$change <- as.character(patientData$change) patientData$change[patientData$change == "Ch"] <- 1 patientData$change <- as.numeric(patientData$change) patientData$change[patientData$change == "No"] <- 0 patientData$change <- as.numeric(patientData$change) patientData$change[patientData$change == "Ch"] <- 1 patientData$readmitted <- as.character(patientData$readmitted) patientData$readmitted[patientData$readmitted == "TRUE"] <- 1 patientData$readmitted <- as.character(patientData$readmitted) patientData$readmitted[patientData$readmitted == "FALSE"] <- 0 patientData$readmitted <- as.numeric(patientData$readmitted) patientData$readmitted[patientData$readmitted == "TRUE"] <- 1 patientData$readmitted <- as.numeric(patientData$readmitted) patientData$readmitted[patientData$readmitted == "FALSE"] <- 0
+
+#Chi-Square Analysis
+
+tab <- xtabs(~race + readmitted, data = patients) barplot(tab, main="Data Distribution by Readmitted patients vs Race results",xlab="Race Results",col=c("darkgreen","blue","red","orange") legend = rownames(tab), beside=TRUE) summary(assocstats(tab))
+
+tab <- xtabs(~age + readmitted, data = patients)
+
+barplot(tab, main="Data Distribution by Readmitted patients vs Age results",xlab="AgeResults",col=c("darkgreen","blue","red","orange","yellow","ma roon","pink","violet","cyan","magenta"),legend = rownames(tab), beside=TRUE)
+
+summary(assocstats(tab))
+
+tab <- xtabs(~A1Cresult + readmitted, data = patients)
+
+barplot(tab, main="Data Distribution by Readmitted patients vs HBA1C
+ 
+25
+
+Analysis on Readmission Rates
+
+
+
+
+results",xlab="HBA1C Results", col=c("darkgreen","blue","red","orange"),legend = rownames(tab), beside=TRUE)
+
+summary(assocstats(tab))
+
+tab <- xtabs(~change + readmitted , data = patients)
+
+barplot(tab, main="Data Distribution by Readmitted patients vs Change in Medication results", xlab="Change in Medication Results", col=c("darkgreen","red"), legend = rownames(tab), beside=TRUE)
+
+summary(assocstats(tab))
+
+#Building the correlation matrix
+
+patientMatrix <- cor(patientData) patientMatrix round(patientMatrix,2)
+
+#statistic descriptives install.packages("pastecs")
+
+library(pastecs)
+round(stat.desc(patientMatrix),2)
+
+#Bartlett test library(psych)
+
+cortest.bartlett(patientMatrix)
+
+#PCA
+
+pc1 <- principal(patientMatrix,nfactors = 3, rotate = "none") pc1$values
+
+pc1
+plot(pc1$values, type= "b")
+
+print.psych(pc1, cut=0.3, sort= TRUE)
+
+#Pattern mining install.packages("arules") library(arules)
+ 
+26
+
+Analysis on Readmission Rates
+
+
+
+
+patternData <-subset(patients,select=c("race","gender","age","A1Cresult","insulin","change","dia betesMed","readmitted","diag_1_desc"))
+
+patternData[,"age"] <- factor(patternData[,"age"]) patternData[,"race"] <- factor(patternData[,"race"]) patternData[,"gender"] <- factor(patternData[,"gender"]) patternData[,"A1Cresult"] <- factor(patternData[,"A1Cresult"]) patternData[,"insulin"] <- factor(patternData[,"insulin"]) patternData[,"change"] <- factor(patternData[,"change"]) patternData[,"diabetesMed"] <- factor(patternData[,"diabetesMed"]) patternData[,"readmitted"] <- factor(patternData[,"readmitted"]) patternData[,"diag_1_desc"] <- factor(patternData[,"diag_1_desc"]) patternPatients <- as(patternData,"transactions")
+
+rules<-apriori(patternPatients,parameter=list(minlen=2,support=0.1,confidence=0.6),
+appearance=list
+(rhs=c("readmitted=TRUE","readmitted=FALSE"),default="lhs"))
+
+inspect(head(rules))
+
+rules.sort <- sort(rules, by="lift") rules.sort inspect(head(rules.sort))
+
+subset.matrix<-is.subset(rules.sort,rules.sort) subset.matrix subset.matrix[lower.tri(subset.matrix,diag=T)]<-0 redudant<-colSums(subset.matrix)>=1 head(redudant)
+
+rules.pruned<-rules.sort[!redudant] inspect(rules.pruned) inspect(head(rules.pruned))
+
+library(arulesViz)
+plot(rules.pruned)
+
+plot(rules.pruned,method="graph",control=list(type="items"))
+
+plot(rules.pruned,method="paracoord",control=list(reorder=TRUE))
+ 
+27
+
+Analysis on Readmission Rates
+
+
+
+
+#Decision Tree install.packages("rpart") library(rpart)
+
+treeData <-subset(patients,select=c("race","age","gender","change","insulin","A1Cresult","rea dmitted"))
+treeData
+
+fit <- rpart(formula=readmitted ~ ., data=treeData, control=rpart.control(minsplit=1, minbucket=1, cp=0.001))
+
+fit plot(fit)
+
+text(fit,pretty=0)
+install.packages("rattle")
+
+library(rattle)
+
+install.packages("rpart.plot")
+
+library(rpart.plot)
+install.packages("RColorBrewer")
+
+library(RColorBrewer)
+fancyRpartPlot(fit)
+
+set.seed(100)
+
+training <- sample (1:nrow(treeData), 0.8*nrow(treeData)) # training row indices trainingData <- treeData[training, ] # training data
+
+testData <- treeData[-training, ] # test data fit <- rpart(formula=readmitted ~ .,
+
+data=trainingData,control=rpart.control(minsplit=1, minbucket=1, cp=0.001))
+
+treeData$readmitted <- factor(treeData$readmitted) fit <- rpart(readmitted~.,data=treeData) test_predictions = predict(fit, testData, type = "class")
+
+head(test_predictions) table(test_predictions)
+
+test_error = sum(test_predictions != testData$readmitted)/nrow(testData) test_error
+
+confMat <- table(testData$readmitted,test_predictions) confMat
+ 
+28
+
+Analysis on Readmission Rates
+
+
+
+
+accuracy <- sum(diag(confMat))/sum(confMat) accuracy
+
+#Random Forest rfData <-
+
+subset(patients,select=c("race","gender","age","A1Cresult","insulin","change","dia
+
+betesMed","readmitted")) rfData[,"age"] <- factor(rfData[,"age"]) rfData[,"race"] <- factor(rfData[,"race"])
+rfData[,"gender"] <- factor(rfData[,"gender"])
+
+rfData[,"A1Cresult"] <- factor(rfData[,"A1Cresult"]) rfData[,"insulin"] <- factor(rfData[,"insulin"]) rfData[,"change"] <- factor(rfData[,"change"])
+
+rfData[,"diabetesMed"] <- factor(rfData[,"diabetesMed"]) rfData[,"readmitted"] <- factor(rfData[,"readmitted"])
+
+training <- sample (1:nrow(rfData), 0.8*nrow(rfData)) # training row indices trainingData <- rfData[training, ] # training data
+
+testData <- rfData[-training, ] # test data
+
+library(randomForest)
+
+rfData.rf <- randomForest(readmitted ~ ., data = trainingData,mtry = 2, importance = TRUE)
+
+rfData.rf prediction<-predict(rfData.rf,testData,type="class") summary(prediction)
+
+test_error = sum(prediction != testData$readmitted)/nrow(testData) test_error
+
+rfData.rf$importance
+
+mean(prediction == testData$readmitted)*100 library(caret) confusionMatrix(data=as.factor(prediction), reference = as.factor(testData$readmitted))
+
+library(doParallel) clus<-makeCluster(spec=8,type="PSOCK") registerDoParallel(clus)
+ 
+29
+
+Analysis on Readmission Rates
+
+
+
+
+
+
+rfData.rf1<-train(readmitted~.,data=trainingData,method="rf",metric='Accuracy',tuneGrid=exp and.grid(.mtry=1:6),ntree=500)
+summary(rfData.rf1)
+plot(rfData.rf1)
+
+rfData.rf1
+
+#Neural Network library(neuralnet) library(nnet) nnetData <-
+
+subset(patients,select=c("race","gender","age","A1Cresult","insulin","change","dia
+
+betesMed","readmitted"))
+
+uniqueLevels <- unique(nnetData$readmitted) uniqueLevels
+
+training <- sample (1:nrow(nnetData), 0.8*nrow(nnetData)) # training row indices trainingData <- nnetData[training, ] # training data
+
+testData <- nnetData[-training, ] # test data
+
+nnetData$gender <- factor(nnetData$gender, labels = seq(1:2), levels = unique(nnetData$gender))
+
+nnetData$race <- factor(nnetData$race, labels = seq(1:6), levels = unique(nnetData$race))
+
+nnetData$age <- factor(nnetData$age, labels = seq(1:10), levels = unique(nnetData$age))
+
+nnetData$A1Cresult <- factor(nnetData$A1Cresult, labels = seq(1:4), levels = unique(nnetData$A1Cresult))
+
+nnetData$insulin <- factor(nnetData$insulin, labels = seq(1:4), levels = unique(nnetData$insulin))
+
+nnetData$change <- factor(nnetData$change, labels = seq(1:2), levels = unique(nnetData$change))
+
+nnetData$diabetesMed <- factor(nnetData$diabetesMed, labels = seq(1:2), levels = unique(nnetData$diabetesMed))
+ 
+30
+
+Analysis on Readmission Rates
+
+
+
+
+
+
+nnetData$readmitted <- factor(nnetData$readmitted, labels = seq(1:2), levels = unique(nnetData$readmitted))
+
+trainset <- cbind(nnetData[,1:8], class.ind(nnetData$readmitted)) testset <- cbind(nnetData[,1:8], class.ind(nnetData$readmitted)) colnames(trainset)[9:10] <- c("ReadmittedTrue","ReadmittedFalse") colnames(testset)[9:10] <- c("ReadmittedTrue","ReadmittedFalse")
+
+name_data <- names(trainset)
+
+fmla <- as.formula(paste("ReadmittedTrue + ReadmittedFalse ~", paste(name_data [!name_data %in% c("ReadmittedTrue","ReadmittedFalse")], collapse = " + "))) trainset <- sapply (trainset, as.numeric)
+testset <- sapply(testset, as.numeric)
+
+nnetData.nn <- neuralnet(fmla, data = trainset, hidden=5, threshold = 0.01, linear.output = F)
+
+plot(nnetData.nn)
+
+pred <- compute (nnetData.nn, testset[,1:8]) pred
+
+summary(pred)
+
+maxidx <- function(arr) { return(which(arr == max(arr)))} idx <- apply(pred$net.result, c(1), maxidx)
+
+prediction <- c(as.vector(unique(nnetData$readmitted)))[idx] prediction <- as.factor(prediction)
+
+confusionMatrix(data=factor(prediction), reference = factor(nnetData$readmitted))
+
+#KNN
+
+library(class)
+library(VIM)
+
+knnData <-subset(patients,select=c("race","gender","age","A1Cresult","insulin","change","dia betesMed","readmitted"))
+
+imputed.knnData <- kNN(knnData)
+ 
+31
+
+Analysis on Readmission Rates
+
+
+
+
+new.knnData <- imputed.knnData[,1:8]
+
+new.knnData$gender <- factor(new.knnData$gender, labels = seq(1:2), levels = unique(new.knnData$gender))
+
+new.knnData$race <- factor(new.knnData$race, labels = seq(1:6), levels = unique(new.knnData$race))
+
+new.knnData$age <- factor(new.knnData$age, labels = seq(1:10), levels = unique(new.knnData$age))
+
+new.knnData$A1Cresult <- factor(new.knnData$A1Cresult, labels = seq(1:4), levels = unique(new.knnData$A1Cresult))
+
+new.knnData$insulin <- factor(new.knnData$insulin, labels = seq(1:4), levels = unique(new.knnData$insulin))
+
+new.knnData$change <- factor(new.knnData$change, labels = seq(1:2), levels = unique(new.knnData$change))
+
+new.knnData$diabetesMed <- factor(new.knnData$diabetesMed, labels = seq(1:2), levels = unique(new.knnData$diabetesMed))
+
+new.knnData$readmitted <- factor(new.knnData$readmitted, labels = seq(1:2), levels = unique(new.knnData$readmitted))
+
+train <- sample(1:nrow(new.knnData), 0.8*nrow(new.knnData)) train_data <- new.knnData[train,]
+
+test_data <- new.knnData[-train,] train_class_variable <- train_data[,8] test_class_variable <- test_data[,8]
+
+for(i in seq(10, 100, 10))
+{
+
+knnTest <- knn(train_data, test_data, train_class_variable, k = i) acc <- mean(knnTest == test_class_variable) print(paste("Accuracy at k = ", i, " is: ", acc * 100, "%"))
+
+}
+ 
+32
+
+Analysis on Readmission Rates
+
+
+
+
+confusionMatrix(data=factor(knnTest), reference = factor(test_data[,8]), positive = "1")
+
+
+
+#Clustering
+library(klaR)
+
+cluster.results <-kmodes(patientData[,c(6,9)], 4, iter.max = 10, weighted = FALSE
+
+)
+cluster.results$cluster
+
+cluster.output <- cbind(patientData,cluster.results$cl) write.csv(cluster.output, file = "kmodes_clusters1.csv", row.names = TRUE)
+
+
+
+#Logistic Regression
+
+patients <- subset(patients, discharge_disposition_id != "Expired") patients <- subset(patients, discharge_disposition_id != "Hospice / home")
+
+patientData <-subset(patients,select=c("race","age","time_in_hospital","A1Cresult","change","in sulin","diabetesMed","readmitted","diag_1","diag_2","diag_3"))
+
+training <- sample (1:nrow(patientData), 0.8*nrow(patientData)) # training row indices
+
+trainingData <- patientData[training, ] # training data testData <- patientData[-training, ] #test data
+
+install.packages("nnet")
+library(nnet)
+
+install.packages("caret")
+library(caret)
+
+
+logisticData <-multinom(readmitted~., data=trainingData)
+
+#Naive Bayes
+
+install.packages("e1071")
+library(e1071)
+ 
+33
+
+Analysis on Readmission Rates
+
+
+
+
+set.seed(100)
+
+sample<-sample(1:10000,size = 0.8*nrow(diabetesData)) # 80% train and 20% test
+
+train_data<-diabetesData[sample,] test_data<-diabetesData[-sample,]
+
+nbClassifier<-naiveBayes(train_data[,1:48],train_data[,49]) # 1:48- all columns until readmitted
+
+table(predict(nbClassifier,test_data[,1:48]),test_data[,49]) test_prediction<-predict(nbClassifier, test_data, type = "class") test_prediction
+
+test_error = sum(test_prediction != test_data$readmitted)/nrow(test_data) #nb-main task
+
+test_error print(paste('Accuracy',1-test_error))
+
+
+#Bayesian Network-Task 1
+
+install.packages(“bnlearn”) actual_data<-diabetesData
+actual_data$readmitted=ifelse(actual_data$readmitted=="FALSE",0,1)
+
+X4<-data.frame(actual_data$insulin,actual_data$A1Cresult, actual_data$readmitted, actual_data$change)
+
+res4<-hc(X4) plot(res4)
+
+fittedbn <- bn.fit(res4, data = X4)
+
+fittedbn fittedbn$actual_data.insulin fittedbn$actual_data.A1Cresult fittedbn$actual_data.readmitted fittedbn$actual_data.change
+
+//queries
+
+cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Up" & actual_data.change=="Ch" ))
+ 
+34
+
+Analysis on Readmission Rates
+
+
+
+
+cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Down" & actual_data.change=="Ch" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Steady" & actual_data.change=="Ch" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Up" & actual_data.change=="No" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Down" & actual_data.change=="No" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="Steady" & actual_data.change=="No" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="No" & actual_data.change=="No" )) cpquery(fittedbn, event = (actual_data.A1Cresult=="None"), evidence = ( actual_data.insulin=="No" & actual_data.change=="Ch" ))
+
+
+
+#Logistic Regression patientData <-
+
+subset(patients,select=c("A1Cresult",”change”,"insulin","readmitted")) patientData <- subset(patients,select=c("A1Cresult","insulin","readmitted")) patientData <- subset(patients,select=c("A1Cresult","readmitted"))
+
+training <- sample (1:nrow(patientData ), 0.8*nrow(patientData )) # training row indices
+
+trainingData <- patientData [training, ] # training data testData <- patientData [-training, ] #test data logisticData <-multinom(readmitted~., data=trainingData)
+
+model2 <- glm (readmitted~., data = trainingData, family = binomial) model1 <- glm (readmitted~., data = trainingData, family = binomial) model <- glm (readmitted~., data = trainingData, family = binomial) anova(model2,model1,model)
+
+
+
+#Task 2
+
+#Pattern Mining
+
+install.packages("arules")
+library(arules)
+ 
+35
+
+Analysis on Readmission Rates
+
+
+
+
+patientData<-subset(diabetesData,select=c("race","gender","age","A1Cresult","insulin","change ","readmitted","diabetesMed"))
+
+patientData[,"age"] <- factor(patientData[,"age"]) patientData[,"race"] <- factor(patientData[,"race"]) patientData[,"gender"] <- factor(patientData[,"gender"])
+
+patientData[,"A1Cresult"] <- factor(patientData[,"A1Cresult"]) patientData[,"insulin"] <- factor(patientData[,"insulin"]) patientData[,"change"] <- factor(patientData[,"change"])
+
+patientData[,"diabetesMed"] <- factor(patientData[,"diabetesMed"]) patientData[,"readmitted"] <- factor(patientData[,"readmitted"])
+
+patternPatients <- as(patientData,"transactions")
+
+rules<-apriori(patternPatients,parameter=list(minlen=2,support=0.1,confidence=0.6),
+appearance=list (rhs="diabetesMed=No",default="lhs"))
+
+inspect(rules)
+
+rules.sort <- sort(rules, by="lift") inspect(rules.sort)
+
+
+install.packages("arulesViz")
+library(arulesViz)
+
+plot(rules.pruned)
+
+plot(rules.pruned,method="graph",control=list(type="items"))
+
+plot(rules.pruned,method="paracoord",control=list(reorder=TRUE))
+
+#Logistic Regression
+
+patientData <- subset(patientData,select=c("readmitted","diag_1","diag_2")) diagnosis_3<-patientData
+
+diagnosis_3$diag_1 <- as.character(diagnosis_3$diag_1) diagnosis_3$diag_2 <- as.character(diagnosis_3$diag_2) diagnosis_3$diag_2[diagnosis_3$diag_2 =="Diabetes"] <- 1
+ 
+36
+
+Analysis on Readmission Rates
+
+
+
+
+diagnosis_3$diag_2[diagnosis_3$diag_2 !="Diabetes"] <- 0 diagnosis_3$diag_1[diagnosis_3$diag_1 =="Circulatory"] <- 1 diagnosis_3$diag_1[diagnosis_3$diag_1 !="Circulatory"] <- 0 training <- sample (1:nrow(diagnosis_3), 0.8*nrow(diagnosis_3)) trainingData <- diagnosis_3[training, ] # training data
+
+testData <- diagnosis_3[-training, ] #test data logisticData <-multinom(readmitted~., data=trainingData)
+
+model1 <- glm (readmitted~., data = trainingData, family = binomial) model <- glm (readmitted~., data = trainingData, family = binomial) anova(model1,model)
